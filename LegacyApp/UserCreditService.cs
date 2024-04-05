@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace LegacyApp
 {
-    public class UserCreditService : IDisposable
+    public class UserCreditService : IDisposable, IUserCreditService
     {
         /// <summary>
         /// Simulating database
@@ -28,15 +28,35 @@ namespace LegacyApp
         /// This method is simulating contact with remote service which is used to get info about someone's credit limit
         /// </summary>
         /// <returns>Client's credit limit</returns>
-        internal int GetCreditLimit(string lastName, DateTime dateOfBirth)
+        public int GetCreditLimit(string lastName)
         {
             int randomWaitingTime = new Random().Next(3000);
             Thread.Sleep(randomWaitingTime);
 
-            if (_database.ContainsKey(lastName))
-                return _database[lastName];
+            if (!_database.ContainsKey(lastName))
+                throw new ArgumentException($"Client {lastName} does not exist");
+                
+            return _database[lastName];
+        }
+        
+        /// <summary>
+        /// Returns null if there is no credit limit.
+        /// </summary>
+        public int? GetCreditLimitWithClientType(string lastName, ClientType clientType)
+        {
+            var creditLimit = GetCreditLimit(lastName);
 
-            throw new ArgumentException($"Client {lastName} does not exist");
+            switch (clientType)
+            {
+                case ClientType.NormalClient:
+                    return creditLimit;
+                case ClientType.ImportantClient:
+                    return creditLimit * 2;
+                case ClientType.VeryImportantClient:
+                    return null;
+                default:
+                    return 0;
+            }
         }
     }
 }
